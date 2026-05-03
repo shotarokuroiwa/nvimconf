@@ -5,6 +5,9 @@ local g = vim.g
 local api = vim.api
 local diagnostic = vim.diagnostic
 opt.encoding = 'utf-8'
+opt.fileencoding = 'utf-8'
+opt.iminsert = 1
+opt.imsearch = 1
 opt.number = true
 opt.clipboard = "unnamedplus"
 opt.list = true
@@ -19,8 +22,11 @@ opt.wildmenu = true
 opt.ruler = true
 opt.smartcase = true
 opt.showmatch = true
-opt.updatetime = 250
+opt.updatetime = 1500
 opt.winblend = 10
+
+-- メッセージを日本語で表示
+vim.cmd('language messages ja_JP.UTF-8')
 
 -- mapleader
 g.mapleader = ' '

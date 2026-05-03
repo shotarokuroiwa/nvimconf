@@ -13,7 +13,12 @@ return {
       end
       api.config.mappings.default_on_attach(bufnr)
 
-      map("n", "<CR>", api.node.open.no_window_picker, opts "Open: No Window Picker")
+      map("n", "<CR>", function()
+        local node = api.tree.get_node_under_cursor()
+        if node then
+          api.node.open.no_window_picker(node)
+        end
+      end, opts "Open: No Window Picker")
       map("n", "O", api.node.open.edit, opts "Open")
       map("n", "X", api.fs.cut, opts "Cut")
       map("n", "x", api.node.navigate.parent_close, opts "Parent Close")
@@ -23,6 +28,9 @@ return {
     require("nvim-tree").setup({
       sync_root_with_cwd = true,
       respect_buf_cwd = true,
+      filters = {
+        dotfiles = false,
+      },
       renderer = {
         indent_markers = {
           enable = true, -- 階層を分かりやすくする
@@ -40,7 +48,7 @@ return {
         update_root = true,
       },
       git = {
-        enable = true,
+        enable = false,
       },
       modified = {
         enable = true,

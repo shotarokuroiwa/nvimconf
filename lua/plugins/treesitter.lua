@@ -8,7 +8,7 @@ return {
   build = ":TSUpdate",
   config = function()
 
-    local ok, configs = pcall(require, 'nvim-treesitter.configs')
+    local ok, configs = pcall(require, 'nvim-treesitter')
     if not ok then 
       return 
     end
@@ -29,6 +29,7 @@ return {
         "gosum",
         "zig",
         "tsx",
+        "jsx",
         "javascript",
         "typescript",
         "json",

@@ -2,8 +2,8 @@ local map = vim.api.nvim_set_keymap
 local opts = { noremap = true, silent = true }
 
 -- esc
-map("i", "jf", "<Esc>", opts)
-map("t", "jf", [[<C-\><C-n>]], opts)
+map("i", "fj", "<Esc>", opts)
+map("t", "fj", [[<C-\><C-n>]], opts)
 
 -- カーソル移動上下逆転
 map("n", "j", "k", { noremap = true })
