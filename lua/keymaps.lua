@@ -53,3 +53,7 @@ map("n", "<Leader>sa", ":bufdo %s/\\v", { noremap = true })
 -- インデントを連続して変更できる(< >で連続して移動させることができる)
 map('v', '<', '<gv', opts)
 map('v', '>', '>gv', opts)
+
+-- ビジュアルモード(x)で選択中に、特定のキーでコメントを揃える設定
+-- ここでは <Leader>a （デフォルトは \a）に割り当てています
+map('x', '<Leader>a', ':EasyAlign / \\/\\//<CR>', opts)

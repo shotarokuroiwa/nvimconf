@@ -15,6 +15,13 @@ return {
       require("ibl").setup()
     end,
   },
+  {
+    'junegunn/vim-easy-align',
+    config = function()
+      vim.keymap.set('v', 'ga', '<Plug>(EasyAlign)')
+      vim.keymap.set('n', 'ga', '<Plug>(EasyAlign)')
+    end,
+  },
   -- {
   --   "kylechui/nvim-surround",
   --   version = "*", -- Use for stability; omit to use `main` branch for the latest features
@@ -24,5 +31,5 @@ return {
   --       -- Configuration here, or leave empty to use defaults
   --     })
   --   end
-  -- },
+  -- }
 }
