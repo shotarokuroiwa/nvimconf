@@ -37,36 +37,45 @@ return {
             fg = "#468a55", 
             italic = true 
           } 
-          hl.TelescopeNormal       = {
-            bg = c.bg_dark,
+          hl.TelescopeNormal        = {
+            bg = "none",
             fg = c.fg_dark,
           }
-          hl.TelescopePromptNormal = {
-            bg = c.bg_dark,
+          hl.TelescopeResultsNormal = {
+            bg = "none",
           }
-          hl.TelescopeBorder       = {
-            bg = c.bg_dark,
+          hl.TelescopePreviewNormal = {
+            bg = "none",
+          }
+          hl.TelescopePromptNormal  = {
+            bg = "none",
+          }
+          hl.TelescopePromptPrefix  = {
+            bg = "none",
+          }
+          hl.TelescopeBorder        = {
+            bg = "none",
           }
           hl.TelescopePromptBorder = {
-            bg = c.bg_dark,
+            bg = "none",
           }
           hl.TelescopePromptTitle  = {
-            bg = c.bg_dark,
+            bg = "none",
             fg = c.fg_dark,
           }
           hl.TelescopePreviewTitle = {
-            bg = c.bg_dark,
+            bg = "none",
             fg = c.fg_dark,
           }
           hl.TelescopeResultsTitle = {
-            bg = c.bg_dark,
+            bg = "none",
             fg = c.fg_dark,
           }
           hl.WhichKeyNormal        = {
             bg = c.bg_dark
           }
           hl.LazyNormal            = {
-            bg = c.bg_dark,
+            bg = "none",
             fg = c.fg_dark,
           }
         end,

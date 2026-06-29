@@ -5,6 +5,15 @@ local opts = { noremap = true, silent = true }
 map("i", "fj", "<Esc>", opts)
 map("t", "fj", [[<C-\><C-n>]], opts)
 
+-- Shift+Enter を明示的に改行に割り当て（以前は有効だった挙動を復元）
+map("i", "<S-CR>", "<C-o>o", opts)
+vim.keymap.set("t", "<S-CR>", function()
+  local chan = vim.b.terminal_job_id
+  if chan then
+    vim.fn.chansend(chan, "\n")
+  end
+end, opts)
+
 -- カーソル移動上下逆転
 map("n", "j", "k", { noremap = true })
 map("v", "j", "k", { noremap = true })
@@ -54,13 +63,29 @@ end
 
 -- 右に縦分割（<C-j>）
 local toggle_term_vertical = make_terminal_toggle("botright vsplit")
-vim.keymap.set("n", "<C-j>", toggle_term_vertical, { noremap = true, silent = true, desc = "Terminal toggle (vertical)" })
-vim.keymap.set("t", "<C-j>", toggle_term_vertical, { noremap = true, silent = true, desc = "Terminal toggle (vertical)" })
+vim.keymap.set("n", "<C-k>", toggle_term_vertical, { noremap = true, silent = true, desc = "Terminal toggle (vertical)" })
+vim.keymap.set("t", "<C-k>", toggle_term_vertical, { noremap = true, silent = true, desc = "Terminal toggle (vertical)" })
 
 -- 下に横分割（<C-k>）。<C-i> は <Tab>（ジャンプリスト前進）と同一コードなので避ける
 local toggle_term_horizontal = make_terminal_toggle("belowright split")
-vim.keymap.set("n", "<C-k>", toggle_term_horizontal, { noremap = true, silent = true, desc = "Terminal toggle (horizontal bottom)" })
-vim.keymap.set("t", "<C-k>", toggle_term_horizontal, { noremap = true, silent = true, desc = "Terminal toggle (horizontal bottom)" })
+vim.keymap.set("n", "<C-j>", toggle_term_horizontal, { noremap = true, silent = true, desc = "Terminal toggle (horizontal bottom)" })
+vim.keymap.set("t", "<C-j>", toggle_term_horizontal, { noremap = true, silent = true, desc = "Terminal toggle (horizontal bottom)" })
+
+-- Claude Code 等のフルスクリーン TUI を「キーボードで」スクロールする。
+-- TUI は代替スクリーンを使うため Neovim 側ではスクロールできないが、
+-- マウスホイールと同じ SGR エスケープシーケンスを端末ジョブへ直接送ることで、
+-- TUI に「ホイール操作」と認識させてスクロールさせる（mouse 設定・モード切替は不要）。
+local function term_wheel(seq, count)
+  return function()
+    local chan = vim.b.terminal_job_id
+    if not chan then return end
+    vim.fn.chansend(chan, string.rep(seq, count or 3))
+  end
+end
+
+-- SGR マウス: 64=ホイール上 / 65=ホイール下（位置 1;1）。j=上 / k=下 の規約に合わせる
+vim.keymap.set("t", "<A-j>", term_wheel("\27[<64;1;1M", 3), opts) -- 上へスクロール
+vim.keymap.set("t", "<A-k>", term_wheel("\27[<65;1;1M", 3), opts) -- 下へスクロール
 
 -- leager+g+gで先頭行頭へ
 -- visualモードで行末へ
@@ -95,3 +120,21 @@ map('v', '>', '>gv', opts)
 -- ビジュアルモード(x)で選択中に、特定のキーでコメントを揃える設定
 -- ここでは <Leader>a （デフォルトは \a）に割り当てています
 map('x', '<Leader>a', ':EasyAlign / \\/\\//<CR>', opts)
+
+-- ===========================================================================
+-- VSCode (vscode-neovim) 用の上書き
+-- Neovim 内蔵のターミナル/分割ウィンドウは VSCode では使えないため、
+-- 対応する VSCode コマンドに割り当て直す。
+-- （このブロックは前方の定義より後に置くことで上書きする）
+-- ===========================================================================
+if vim.g.vscode then
+  local vscode = require("vscode")
+
+  -- ターミナルパネルのトグル（元: <C-j>/<C-k> の Neovim ターミナル）
+  vim.keymap.set("n", "<C-j>", function() vscode.action("workbench.action.terminal.toggleTerminal") end, opts)
+  vim.keymap.set("n", "<C-k>", function() vscode.action("workbench.action.terminal.toggleTerminal") end, opts)
+
+  -- 領域間のフォーカス移動（ツリー/エディタ/パネル/AIチャット）は
+  -- フォーカス位置に依存せず効く必要があるため keybindings.json 側で
+  -- Alt+h/j/k/l・Alt+t・Alt+a に設定している（ここでは扱わない）。
+end

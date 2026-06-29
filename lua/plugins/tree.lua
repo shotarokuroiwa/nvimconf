@@ -20,8 +20,6 @@ return {
         end
       end, opts "Open: No Window Picker")
       map("n", "O", api.node.open.edit, opts "Open")
-      map("n", "X", api.fs.cut, opts "Cut")
-      map("n", "x", api.node.navigate.parent_close, opts "Parent Close")
       vim.keymap.del("n", "<C-e>", { buffer = bufnr })
     end
 

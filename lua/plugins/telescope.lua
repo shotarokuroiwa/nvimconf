@@ -12,6 +12,20 @@ return {
   },
   dependencies = { 'nvim-lua/plenary.nvim' },
   opts = {
+    defaults = {
+      winblend = 50,
+      -- ファイル名を先頭に表示して、深い階層のファイルも見つけやすくする
+      -- （フィルタは従来どおりディレクトリを含むパス全体に効く）
+      path_display = { "filename_first" },
+      mappings = {
+        i = {
+          ["q"] = require("telescope.actions").close,
+        },
+        n = {
+          ["q"] = require("telescope.actions").close,
+        },
+      },
+    },
     pickers = {
       colorscheme = {
         enable_preview = true,

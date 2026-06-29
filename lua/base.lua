@@ -41,3 +41,6 @@ api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
     diagnostic.open_float(nil, {focus=false})
   end
 })
+
+-- fontsize（h の後ろの数字がサイズ。小さくしたいなら数字を下げる）
+vim.o.guifont = "Cascadia Code:h11"

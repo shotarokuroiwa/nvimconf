@@ -18,7 +18,7 @@ return {
       lualine_z = { 'location' },
     },
     options = {
-      theme = 'vscode',
+      theme = 'auto',
     },
     inactive_sections = {
       lualine_a = {},
