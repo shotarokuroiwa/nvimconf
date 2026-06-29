@@ -36,7 +36,7 @@ map("i", "<a-l>", "<Right>", opts)
 
 -- ターミナル（トグル式：隠してもバッファは消えず、再度開くと続きから）
 -- split_cmd ごとに独立したバッファを保持するトグル関数を生成する
-local function make_terminal_toggle(split_cmd)
+local function make_terminal_toggle(split_cmd, fix)
   local term = { buf = nil, win = nil }
   return function()
     -- 表示中ならウィンドウだけ閉じて隠す（バッファは残す）
@@ -50,6 +50,13 @@ local function make_terminal_toggle(split_cmd)
     vim.cmd(split_cmd)
     term.win = vim.api.nvim_get_current_win()
 
+    -- 他の分割が増えてもサイズが再分配されないよう固定する
+    if fix == "width" then
+      vim.wo[term.win].winfixwidth = true
+    elseif fix == "height" then
+      vim.wo[term.win].winfixheight = true
+    end
+
     -- バッファが生きていれば再利用、なければ新規作成
     if term.buf and vim.api.nvim_buf_is_valid(term.buf) then
       vim.api.nvim_win_set_buf(term.win, term.buf)
@@ -61,15 +68,32 @@ local function make_terminal_toggle(split_cmd)
   end
 end
 
--- 右に縦分割（<C-j>）
-local toggle_term_vertical = make_terminal_toggle("botright vsplit")
+-- 右に縦分割（<C-k>）。幅を固定して Claude カラムと取り合っても細くならないようにする
+local toggle_term_vertical = make_terminal_toggle("botright vsplit", "width")
 vim.keymap.set("n", "<C-k>", toggle_term_vertical, { noremap = true, silent = true, desc = "Terminal toggle (vertical)" })
 vim.keymap.set("t", "<C-k>", toggle_term_vertical, { noremap = true, silent = true, desc = "Terminal toggle (vertical)" })
 
--- 下に横分割（<C-k>）。<C-i> は <Tab>（ジャンプリスト前進）と同一コードなので避ける
-local toggle_term_horizontal = make_terminal_toggle("belowright split")
+-- 下に横分割（<C-j>）。botright で画面下端にフル幅で開き、Claude カラムの内側に
+-- 入れ子にならないようにする（入れ子になると Claude の TUI が崩れて入力不能に見える）
+local toggle_term_horizontal = make_terminal_toggle("botright split", "height")
 vim.keymap.set("n", "<C-j>", toggle_term_horizontal, { noremap = true, silent = true, desc = "Terminal toggle (horizontal bottom)" })
 vim.keymap.set("t", "<C-j>", toggle_term_horizontal, { noremap = true, silent = true, desc = "Terminal toggle (horizontal bottom)" })
+
+-- Claude Code の端末ウィンドウは幅を固定し、他の分割が増えても細くならないようにする
+-- （claudecode.nvim の native provider は winfixwidth を設定しないため、ここで補う）
+vim.api.nvim_create_autocmd("TermOpen", {
+  pattern = "*",
+  callback = function(args)
+    if vim.api.nvim_buf_get_name(args.buf):match("claude") then
+      vim.schedule(function()
+        local win = vim.fn.bufwinid(args.buf)
+        if win ~= -1 then
+          vim.wo[win].winfixwidth = true
+        end
+      end)
+    end
+  end,
+})
 
 -- Claude Code 等のフルスクリーン TUI を「キーボードで」スクロールする。
 -- TUI は代替スクリーンを使うため Neovim 側ではスクロールできないが、
