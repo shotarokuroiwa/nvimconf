@@ -19,7 +19,9 @@ return {
       path_display = { "filename_first" },
       mappings = {
         i = {
-          ["q"] = require("telescope.actions").close,
+          -- insert モードでは "q" を文字入力として使えるようにし、
+          -- 閉じるのは入力の邪魔にならない <C-q> に割り当てる
+          ["<C-q>"] = require("telescope.actions").close,
         },
         n = {
           ["q"] = require("telescope.actions").close,

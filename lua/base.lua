@@ -28,6 +28,10 @@ opt.winblend = 10
 -- メッセージを日本語で表示
 vim.cmd('language messages ja_JP.UTF-8')
 
+-- LSP診断 / プラグイン通知メッセージの日本語化（パターン辞書によるベストエフォート）
+-- 辞書に訳を追記したいときは lua/config/ja_messages.lua を編集する
+require('config.ja_messages').setup()
+
 -- mapleader
 g.mapleader = ' '
 g.maplocalleader = "\\"

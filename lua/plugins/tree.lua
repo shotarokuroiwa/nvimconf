@@ -21,6 +21,9 @@ return {
       end, opts "Open: No Window Picker")
       map("n", "O", api.node.open.edit, opts "Open")
       vim.keymap.del("n", "<C-e>", { buffer = bufnr })
+      -- ツリー上でもグローバルの <C-k>（縦分割ターミナルのトグル）を使えるよう、
+      -- nvim-tree デフォルトの <C-k>（show_info_popup）を解除する
+      vim.keymap.del("n", "<C-k>", { buffer = bufnr })
     end
 
     require("nvim-tree").setup({

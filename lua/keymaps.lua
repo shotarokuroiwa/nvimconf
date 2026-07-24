@@ -111,6 +111,14 @@ end
 vim.keymap.set("t", "<A-j>", term_wheel("\27[<64;1;1M", 3), opts) -- 上へスクロール
 vim.keymap.set("t", "<A-k>", term_wheel("\27[<65;1;1M", 3), opts) -- 下へスクロール
 
+-- 端末内で動かす TUI 版 nvim では、ホスト端末が Ctrl+C を「コンソール制御イベント」
+-- として食ってしまい、内蔵ターミナルジョブへ 0x03 が転送されないことがある
+-- （neovide/GUI では発生しない）。キーイベントを捕まえて 0x03 を明示送出して回避する。
+vim.keymap.set("t", "<C-c>", function()
+  local chan = vim.b.terminal_job_id
+  if chan then vim.fn.chansend(chan, "\3") end
+end, { noremap = true, silent = true, desc = "Send Ctrl+C (0x03) to terminal job" })
+
 -- leager+g+gで先頭行頭へ
 -- visualモードで行末へ
 map("n", "gg", "gg0", opts)
