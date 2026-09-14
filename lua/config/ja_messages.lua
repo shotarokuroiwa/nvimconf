@@ -7,8 +7,9 @@
 --
 -- したがってここは「よく出るメッセージをパターン辞書で置換する」方式。
 -- 未知のメッセージは英語のまま表示される。新しい訳を足したくなったら
--- 下の diagnostic_rules / notify_rules にルールを追記するか、あるいは
--- M.add_diagnostic_rule / M.add_notify_rule を setup() 後に呼べばよい。
+-- 下の diagnostic_rules / notify_rules / claudecode_rules にルールを追記するか、
+-- あるいは M.add_diagnostic_rule / M.add_notify_rule / M.add_claudecode_rule を
+-- setup() 後に呼べばよい。
 --
 -- ルールの形式: { "Luaパターン", "置換文字列" }
 --   - パターンは Lua パターン（正規表現ではない）。特殊文字は % でエスケープ:
@@ -21,7 +22,15 @@
 --     「より具体的なルールを上に、汎用ルールを下に」並べること。
 --
 -- 対応LSP: lua_ls / ts_ls / phpactor / gopls / ruby_lsp / ziggy / clangd
--- 対応通知: lazy.nvim / conform.nvim / telescope / git-conflict / vim.lsp
+-- 対応通知: lazy.nvim / conform.nvim / telescope / git-conflict / vim.lsp /
+--           claudecode.nvim
+--
+-- 【翻訳できないもの】
+--   - Vim 本体が出すメッセージ（W12 の「file has changed」警告や
+--     「[O]K, (L)oad File, ...」のプロンプト、E??? 系のエラー）は
+--     vim.notify を通らず C 側から直接描画されるため、ここでは触れない。
+--   - claudecode.nvim の INFO / DEBUG / TRACE ログは nvim_echo 経由なので
+--     同様に翻訳されない（ERROR / WARN だけが vim.notify を通る）。
 -- ============================================================================
 
 local M = {}
@@ -196,9 +205,96 @@ M.notify_rules = {
   { "^method (.-) is not supported by any of the servers registered for the current buffer$", "メソッド %1 は、現在のバッファに登録されたどのサーバーもサポートしていません" },
   { "^Rename failed$", "リネームに失敗しました" },
 
+  -- ── claudecode.nvim（前置きの付かないもの） ──────────────────────────
+  { "^ClaudeCode Logger: Invalid or missing log_level in configuration %(received: (.-)%)%. Defaulting to INFO%.$", "ClaudeCode ロガー: 設定の log_level が不正か未設定です（受け取った値: %1）。INFO を使用します" },
+
   -- ── 汎用 ─────────────────────────────────────────────────────────────
   { "^Not found$", "見つかりません" },
   { "^Done$", "完了しました" },
+}
+
+-- claudecode.nvim の通知の翻訳ルール ---------------------------------------
+-- claudecode.nvim のログは "[ClaudeCode] [diff] [ERROR] 本文" という形で
+-- vim.notify に渡ってくる。ここのルールは前置きを外した「本文」に対して
+-- 当てるので、パターンに [ClaudeCode] を書く必要はない（前置きはそのまま
+-- 残して表示する）。なお INFO 以下は nvim_echo 経由なので翻訳されない。
+M.claudecode_rules = {
+  -- ── 差分（diff）─────────────────────────────────────────────────────
+  -- 未保存のまま Claude が差分を出そうとしたとき。実際のメッセージは
+  -- 外側（Diff setup failed for "タブ名" error: ...）と内側（Failed to
+  -- setup diff operation: ...）が入れ子になっているので、一番よく出る
+  -- 「未保存」のケースだけ丸ごと 1 本のルールで畳んで読みやすくする。
+  {
+    '^Diff setup failed for "(.-)" error: .-Cannot create diff: file has unsaved changes %(Please save %(:w%) or discard %(:e!%) changes to (.-) before creating diff%)$',
+    "差分を作成できません。%2 に未保存の変更があります（:w で保存するか :e! で破棄してから再実行してください）［対象: %1］",
+  },
+  {
+    '^Diff setup failed for "(.-)" error: Diff setup failed %- Failed to setup diff operation: (.*)$',
+    "差分処理の準備に失敗しました［対象: %1］: %2",
+  },
+  { '^Diff setup failed for "(.-)" error: Diff setup failed %- (.*)$', "差分の準備に失敗しました［対象: %1］: %2" },
+  { '^Diff setup failed for "(.-)" error: (.*)$', "差分の準備に失敗しました［対象: %1］: %2" },
+  { "^Failed to setup diff operation: (.*)$", "差分処理の準備に失敗しました: %1" },
+  { "^Cannot create diff: file has unsaved changes$", "差分を作成できません。ファイルに未保存の変更があります" },
+  { "^Failed to create empty buffer for new file diff$", "新規ファイル差分用の空バッファを作成できませんでした" },
+  { "^Failed to configure empty buffer: (.*)$", "空バッファの設定に失敗しました: %1" },
+  { "^No global response sender found for coroutine: (.*)$", "コルーチン %1 に対応する応答の送信先が見つかりません" },
+  { "^Coroutine failed: (.*)$", "コルーチンの実行に失敗しました: %1" },
+
+  -- ── 起動 / 停止（init）───────────────────────────────────────────────
+  { "^Claude Code integration is not running%.?$", "Claude Code 連携は起動していません" },
+  { "^Claude Code integration is already running on port (%d+)$", "Claude Code 連携はすでにポート %1 で起動しています" },
+  { "^Failed to start Claude Code server: (.*)$", "Claude Code サーバーの起動に失敗しました: %1" },
+  { "^Failed to stop Claude Code integration: (.*)$", "Claude Code 連携の停止に失敗しました: %1" },
+  { "^Failed to generate authentication token: (.*)$", "認証トークンの生成に失敗しました: %1" },
+  { "^Invalid authentication token generated$", "生成された認証トークンが不正です" },
+  { "^Authentication token mismatch between server and lock file$", "サーバーとロックファイルの認証トークンが一致しません" },
+  { "^Failed to create lock file: (.*)$", "ロックファイルの作成に失敗しました: %1" },
+  { "^Failed to remove lock file: (.*)$", "ロックファイルの削除に失敗しました: %1" },
+  { "^Failed to load claudecode%.terminal module for setup%.?$", "claudecode.terminal モジュールを読み込めませんでした" },
+  { "^Terminal module not found%..*$", "ターミナルモジュールが見つかりません（ClaudeCode / ClaudeCodeOpen / ClaudeCodeClose は登録されません）" },
+
+  -- ── @メンション / ファイル送信（command・queue）──────────────────────
+  { "^Connection timeout %- clearing (%d+) queued @ mentions$", "接続がタイムアウトしました。待機中の @ メンション %1 件を破棄します" },
+  { "^Failed to send queued @ mention: (.*)$", "待機中の @ メンションを送信できませんでした: %1" },
+  { "^Failed to add file: (.-) %- (.*)$", "ファイルを追加できませんでした: %1（%2）" },
+  { "^Failed to broadcast directory (.*)$", "ディレクトリの送信に失敗しました: %1" },
+  { "^Failed to broadcast file (.*)$", "ファイルの送信に失敗しました: %1" },
+  { "^Too many files selected %((%d+)%), limiting to (%d+)$", "選択されたファイルが多すぎます（%1 件）。%2 件までに制限します" },
+  { "^Added (%d+)/(%d+) files from visual selection$", "選択範囲から %1/%2 件のファイルを追加しました" },
+  { "^No models configured for selection$", "選択できるモデルが設定されていません" },
+  { "^Invalid model value selected$", "選択されたモデルの値が不正です" },
+
+  -- ── コマンド名が頭に付くもの（ClaudeCodeAdd: ... など）───────────────
+  --   ClaudeCodeSend->TreeAdd のような矢印付きの名前も拾えるようにしている。
+  { "^(ClaudeCode[%w_>%-]*): Claude Code integration is not running%.?$", "%1: Claude Code 連携は起動していません" },
+  { "^(ClaudeCode[%w_>%-]*): No file path provided$", "%1: ファイルパスが指定されていません" },
+  { "^(ClaudeCode[%w_>%-]*): File or directory does not exist: (.*)$", "%1: ファイルまたはディレクトリが存在しません: %2" },
+  { "^(ClaudeCode[%w_>%-]*): Invalid start line number: (.*)$", "%1: 開始行の指定が不正です: %2" },
+  { "^(ClaudeCode[%w_>%-]*): Invalid end line number: (.*)$", "%1: 終了行の指定が不正です: %2" },
+  { "^(ClaudeCode[%w_>%-]*): Start line must be positive: (.*)$", "%1: 開始行は正の数で指定してください: %2" },
+  { "^(ClaudeCode[%w_>%-]*): End line must be positive: (.*)$", "%1: 終了行は正の数で指定してください: %2" },
+  { "^(ClaudeCode[%w_>%-]*): No files selected.*$", "%1: ファイルが選択されていません" },
+  { "^(ClaudeCode[%w_>%-]*): Failed to add any files.*$", "%1: ファイルを 1 件も追加できませんでした" },
+  { "^(ClaudeCode[%w_>%-]*): Failed to load selection module%.?$", "%1: 選択範囲モジュールを読み込めませんでした" },
+
+  -- ── ターミナル（terminal）────────────────────────────────────────────
+  { "^'snacks' provider configured, but Snacks%.nvim not available%. Falling back to 'native'%.$", "ターミナルに 'snacks' が指定されていますが Snacks.nvim を利用できません。'native' に切り替えます" },
+  { "^'external' provider configured, but provider_opts%.external_terminal_cmd not properly set%. Falling back to 'native'%.$", "ターミナルに 'external' が指定されていますが provider_opts.external_terminal_cmd が正しく設定されていません。'native' に切り替えます" },
+  { "^'none' provider configured but failed to load%. Falling back to 'native'%.$", "ターミナルの 'none' プロバイダを読み込めませんでした。'native' に切り替えます" },
+  { "^Custom table provider configured but (.-)%. Falling back to 'native'%.$", "独自のターミナルプロバイダが指定されていますが利用できません（%1）。'native' に切り替えます" },
+  { "^Invalid custom table provider: (.-)%. Falling back to 'native'%.$", "独自のターミナルプロバイダが不正です: %1。'native' に切り替えます" },
+  { "^Invalid provider configured: (.-)%. Defaulting to 'native'%.$", "指定されたターミナルプロバイダが不正です: %1。'native' を使用します" },
+  { "^Invalid provider type: (.-)%. Must be string or table%. Defaulting to 'native'%.$", "ターミナルプロバイダの型が不正です: %1。文字列かテーブルで指定してください。'native' を使用します" },
+  { "^Failed to show hidden terminal$", "非表示になっているターミナルを再表示できませんでした" },
+  { "^Claude exited with code (%d+)%..*$", "Claude が終了コード %1 で終了しました。エラーが出ていないか確認してください" },
+
+  -- ── サーバー / クライアント（server・client）─────────────────────────
+  { "^WebSocket server error:%s*(.*)$", "WebSocket サーバーでエラーが発生しました: %1" },
+  { "^Failed to send handshake response to client (.-): (.*)$", "クライアント %1 へのハンドシェイク応答の送信に失敗しました: %2" },
+  { "^Failed to send handshake response: (.*)$", "ハンドシェイク応答の送信に失敗しました: %1" },
+  { "^Authentication failed for client (.-): (.*)$", "クライアント %1 の認証に失敗しました: %2" },
+  { "^WebSocket handshake failed for client (.-): (.*)$", "クライアント %1 との WebSocket ハンドシェイクに失敗しました: %2" },
 }
 
 -- 指定ルール群でメッセージを翻訳する（最初にマッチしたルールを適用） -------
@@ -222,6 +318,29 @@ end
 
 M.translate = translate
 
+-- vim.notify に来た 1 メッセージを訳す --------------------------------------
+-- claudecode.nvim だけは "[ClaudeCode] [diff] [ERROR] 本文" という前置きが
+-- 付くので、前置きを外して本文だけを claudecode_rules で訳し、前置きは
+-- そのまま戻す（どのコンポーネントのどのレベルかは残したいため）。
+-- vim.notify を通るのは ERROR / WARN だけなので、その 2 つだけ見れば足りる。
+local function translate_notify(msg)
+  if type(msg) ~= "string" then
+    return msg
+  end
+
+  local prefix, body = msg:match("^(%[ClaudeCode%].-%[ERROR%])%s(.*)$")
+  if not prefix then
+    prefix, body = msg:match("^(%[ClaudeCode%].-%[WARN%])%s(.*)$")
+  end
+  if prefix then
+    return prefix .. " " .. translate(body, M.claudecode_rules)
+  end
+
+  return translate(msg, M.notify_rules)
+end
+
+M.translate_notify = translate_notify
+
 -- ルールを外から追加するためのヘルパー（setup 後でも使える） ---------------
 -- 具体的なルールほど先に評価されてほしいので、既定では先頭に挿入する。
 function M.add_diagnostic_rule(pattern, replacement, append)
@@ -232,6 +351,12 @@ end
 function M.add_notify_rule(pattern, replacement, append)
   local rule = { pattern, replacement }
   table.insert(M.notify_rules, append and #M.notify_rules + 1 or 1, rule)
+end
+
+-- claudecode.nvim 用。パターンは "[ClaudeCode] ..." を除いた本文に当てる。
+function M.add_claudecode_rule(pattern, replacement, append)
+  local rule = { pattern, replacement }
+  table.insert(M.claudecode_rules, append and #M.claudecode_rules + 1 or 1, rule)
 end
 
 -- セットアップ --------------------------------------------------------------
@@ -260,10 +385,10 @@ function M.setup()
     vim.notify = function(msg, level, opts)
       if type(msg) == "table" then
         for i, line in ipairs(msg) do
-          msg[i] = translate(line, M.notify_rules)
+          msg[i] = translate_notify(line)
         end
       else
-        msg = translate(msg, M.notify_rules)
+        msg = translate_notify(msg)
       end
       return orig_notify(msg, level, opts)
     end

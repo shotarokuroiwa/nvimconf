@@ -25,6 +25,37 @@ opt.showmatch = true
 opt.updatetime = 1500
 opt.winblend = 10
 
+-- ============================================================
+-- 差分表示の設定（Claude Code の修正案プレビュー / :diffthis 共通）
+-- 「差分が見づらい」対策として追加。色の設定は
+-- lua/plugins/colorschema.lua の on_highlights 側にある。
+-- ============================================================
+--   internal            : Neovim 内蔵の diff エンジンを使う（外部 diff 不要）
+--   filler              : 片側にしか無い行を埋め草行で埋め、左右の行位置を揃える
+--   closeoff            : 片方のウィンドウを閉じたら diff モードも自動解除する
+--   algorithm:histogram : 変更のかたまりを人間の感覚に近い単位で検出するアルゴリズム
+--   indent-heuristic    : インデントを考慮し、ブロックの切れ目が不自然にならないようにする
+--   linematch:60        : 追加/削除された行同士を突き合わせ、行内のどの語が
+--                         変わったか（DiffText）まで色分けする。数値は突き合わせを
+--                         試みる最大行数で、大きいほど精密だが重くなる
+--   inline:word         : 行内の差分を「単語単位」で切り出して強調する。
+--                         既定の inline:simple は変わった範囲をひとかたまりで
+--                         塗るので、実際には変わっていない語まで濃く見えてしまう。
+--                         word にすると本当に変わった語だけが濃く塗られる
+--                         （文字単位まで細かくしたいときは inline:char）
+vim.opt.diffopt = {
+  "internal",
+  "filler",
+  "closeoff",
+  "algorithm:histogram",
+  "indent-heuristic",
+  "linematch:60",
+  "inline:word",
+}
+-- filler で挿入される埋め草行を斜線で塗る。空行のままだと「元々空行なのか
+-- 片側にしか行が無いのか」が区別できないため、斜線で明示する
+vim.opt.fillchars:append({ diff = "╱" })
+
 -- メッセージを日本語で表示
 vim.cmd('language messages ja_JP.UTF-8')
 

@@ -1,20 +1,18 @@
 return {
   "coder/claudecode.nvim",
-  dependencies = { "folke/snacks.nvim" }, -- ターミナル表示に使用（任意）
+ dependencies = { "folke/snacks.nvim" }, -- ターミナル表示に使用（任意）
   opts = {
     terminal = {
       provider = "native",          -- Snacks ではなく Neovim ネイティブ端末を使用
       split_side = "right",         -- 右側に開く
       split_width_percentage = 0.5,   -- 画面の半分の幅
     },
-    diff_opts = {
-      -- 修正案を「上下分割」で表示（元ファイル=上 / 修正案=下）。
-      -- 追加行・削除行が同じ縦並びの一画面に収まり、
-      -- 修正画面は現在のウィンドウの下（他ファイルが開いていれば左画面の下半分）に開く。
-      layout = "horizontal",
-      open_in_new_tab = false,       -- 新しいタブではなく現在のタブに開く
-    },
   },
+  -- 差分はエディタではなく Claude Code のターミナル内に表示させている。
+  -- これは Neovim 側ではなく CLI 側の設定:
+  --   /config -> Connections -> Diff tool = terminal
+  -- （CLI は「IDE が接続されているか」だけを見て差分の出し先を決めるので、
+  --   プラグイン側の diff_opts では制御できない）
   keys = {
     { "<leader>a",  nil,                              desc = "AI/Claude Code" },
     -- ノーマル/ターミナル両モードでトグル（Claude の端末内からも同キーで閉じられる）
@@ -23,6 +21,9 @@ return {
     { "<leader>ar", "<cmd>ClaudeCode --resume<cr>",   desc = "Resume Claude" },
     { "<leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = "Continue Claude" },
     { "<leader>ab", "<cmd>ClaudeCodeAdd %<cr>",       desc = "Add current buffer" },
+    -- モデル切り替え（引数はそのまま claude CLI に渡される）
+    { "<leader>m", "<cmd>ClaudeCode --model opus<cr>",  desc = "Claude: Opus 4.8" },
+    { "<leader>M", "<cmd>ClaudeCode --model fable<cr>", desc = "Claude: Fable 5（最上位）" },
     { "<leader>as", "<cmd>ClaudeCodeSend<cr>",        mode = "v",                 desc = "Send to Claude" },
     {
       "<leader>as",
@@ -30,8 +31,7 @@ return {
       desc = "Add file",
       ft = { "NvimTree", "neo-tree", "oil" },
     },
-    -- 差分の承認 / 拒否
-    { "<leader>aa", "<cmd>ClaudeCodeDiffAccept<cr>",  desc = "Accept diff" },
-    { "<leader>ad", "<cmd>ClaudeCodeDiffDeny<cr>",    desc = "Deny diff" },
+    -- 差分はターミナル内で承認 / 拒否するので、
+    -- エディタ側の差分キーマップ（<leader>aa / ad / au）は不要になった。
   },
 }
