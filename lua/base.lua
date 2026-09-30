@@ -63,6 +63,9 @@ vim.cmd('language messages ja_JP.UTF-8')
 -- 辞書に訳を追記したいときは lua/config/ja_messages.lua を編集する
 require('config.ja_messages').setup()
 
+-- Neovide で日本語入力の未確定文字を表示する（Neovide 以外では何もしない）
+require('config.neovide_ime').setup()
+
 -- mapleader
 g.mapleader = ' '
 g.maplocalleader = "\\"

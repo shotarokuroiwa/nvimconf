@@ -23,6 +23,14 @@ map("n", "k", "j", { noremap = true })
 map("v", "k", "j", { noremap = true })
 map("t", "k", "k", { noremap = true })
 
+-- マウスホイールのように画面だけスクロールする（カーソルは画面外に出るまで同じ行に留まる）
+-- Shift+J=上 / Shift+K=下（j/k 逆転に合わせる）。ホイール1ノッチと同じ3行ずつ動かす
+-- ※ 標準の J（行結合）と K（LSP ホバー）は上書きされる
+map("n", "J", "3<C-y>", opts)
+map("n", "K", "3<C-e>", opts)
+map("v", "J", "3<C-y>", opts)
+map("v", "K", "3<C-e>", opts)
+
 -- 行移動逆転
 map("n", "<A-k>", ":m .+1<CR>==", opts)
 map("n", "<A-j>", ":m .-2<CR>==", opts)
