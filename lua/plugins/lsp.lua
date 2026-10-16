@@ -82,7 +82,12 @@ return {
     }))
 
     -- ts_ls
-    vim.lsp.config("ts_ls", default_server_opts)
+    -- プロジェクトに typescript が無いときの予備。Homebrew の typescript は 7 系（Go 版）で
+    -- tsserver.js が無く ts_ls が起動できないため、6 系を nvim のデータ dir に入れて使う:
+    --   npm i --prefix ~/.local/share/nvim/typescript typescript@6
+    local ts_fallback = vim.fn.stdpath("data") .. "/typescript/node_modules/typescript/lib"
+    vim.lsp.config("ts_ls", vim.tbl_extend("force", default_server_opts,
+      vim.uv.fs_stat(ts_fallback) and { init_options = { tsserver = { fallbackPath = ts_fallback } } } or {}))
 
     -- phpactor
     vim.lsp.config("phpactor", vim.tbl_extend("force", default_server_opts, {
@@ -100,13 +105,12 @@ return {
     vim.lsp.config("ziggy", default_server_opts)
 
     -- clangd
+    local clangd_cmd = { "clangd", "--header-insertion=iwyu", "--all-scopes-completion" }
+    if vim.fn.has("win32") == 1 then
+      table.insert(clangd_cmd, 2, "--query-driver=C:/Users/shota/scoop/apps/gcc/15.2.0/bin/gcc.exe")
+    end
     vim.lsp.config("clangd", vim.tbl_extend("force", default_server_opts, {
-      cmd = {
-        "clangd",
-        "--query-driver=C:/Users/shota/scoop/apps/gcc/15.2.0/bin/gcc.exe", 
-        "--header-insertion=iwyu",
-        "--all-scopes-completion"
-      },
+      cmd = clangd_cmd,
       initializationOptions = {
         clangdFileStatus = true,
         usePlaceholders = true,

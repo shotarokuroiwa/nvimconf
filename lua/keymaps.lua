@@ -61,7 +61,8 @@ local function make_terminal_toggle(split_cmd, fix)
     if term.buf and vim.api.nvim_buf_is_valid(term.buf) then
       vim.api.nvim_win_set_buf(term.win, term.buf)
     else
-      vim.cmd("terminal powershell")
+      -- Windows は powershell、それ以外（macOS / Linux）はログインシェルを使う
+      vim.cmd(vim.fn.has("win32") == 1 and "terminal powershell" or "terminal")
       term.buf = vim.api.nvim_get_current_buf()
     end
     vim.cmd("startinsert")
@@ -124,9 +125,11 @@ end, { noremap = true, silent = true, desc = "Send Ctrl+C (0x03) to terminal job
 map("n", "gg", "gg0", opts)
 map("v", "G", "G$", opts)
 
--- 画面移動左右い
-map("n", "<M-h>", "<C-w>h", opts)
-map("n", "<M-l>", "<C-w>l", opts)
+-- 画面移動左右（Ctrl + h / l）
+-- Command + h は macOS の「アプリを隠す」に取られ、ターミナル版 nvim には届かないため使わない
+-- <C-j>/<C-k> はターミナルのトグルに使っているので、上下は下の Alt + j / k
+map("n", "<C-h>", "<C-w>h", opts)
+map("n", "<C-l>", "<C-w>l", opts)
 -- ウィンドウ移動（上下）
 map("n", "<M-k>", "<C-w>j", opts) -- Alt + j で下のウィンドウへ
 map("n", "<M-j>", "<C-w>k", opts) -- Alt + k で上のウィンドウへ

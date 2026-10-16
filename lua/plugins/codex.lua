@@ -41,12 +41,13 @@ return {
       -- 開閉は下の <C-g> を使う。
 
       -- 端末からのウィンドウ移動。keymaps.lua で <M-j>/<M-k> を
-      -- 「上/下」逆に割り当てているので、それに合わせて入れ替える
+      -- 「上/下」逆に割り当てているので、それに合わせて入れ替える。
+      -- 左右は keymaps.lua と同じく Ctrl + h / l
       window_navigation = {
-        left  = "<M-h>",
+        left  = "<C-h>",
         down  = "<M-k>",
         up    = "<M-j>",
-        right = "<M-l>",
+        right = "<C-l>",
       },
     },
   },

@@ -78,4 +78,33 @@ api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
 })
 
 -- fontsize（h の後ろの数字がサイズ。小さくしたいなら数字を下げる）
-vim.o.guifont = "Cascadia Code:h11"
+-- macOS はポイント指定で Windows より小さく見えるので大きめにする。
+-- Nerd Font 版（brew install --cask font-cascadia-code-nf）を優先してアイコンを表示する
+if vim.fn.has("mac") == 1 then
+  vim.o.guifont = "Cascadia Code NF,Cascadia Code:h14"
+else
+  vim.o.guifont = "Cascadia Code:h11"
+end
+
+-- Neovide 固有の設定
+if vim.g.neovide then
+  -- Option キーを Alt(Meta) として扱う（<M-h>/<M-j> 等のキーマップを macOS でも効かせる）
+  vim.g.neovide_input_macos_option_key_is_meta = "both"
+  -- Cmd+C / Cmd+V / Cmd+S を macOS 流に使えるようにする
+  if vim.fn.has("mac") == 1 then
+    vim.keymap.set({ "n", "v" }, "<D-c>", '"+y')
+    vim.keymap.set({ "n", "v" }, "<D-v>", '"+p')
+    vim.keymap.set("i", "<D-v>", "<C-r>+")
+    vim.keymap.set("c", "<D-v>", "<C-r>+")
+    vim.keymap.set("t", "<D-v>", [[<C-\><C-n>"+pi]])
+    vim.keymap.set("n", "<D-s>", "<cmd>w<cr>")
+  end
+  -- Cmd + / Cmd - / Cmd 0 でフォントサイズ変更
+  vim.g.neovide_scale_factor = 1.0
+  local function scale(delta)
+    vim.g.neovide_scale_factor = delta and vim.g.neovide_scale_factor * delta or 1.0
+  end
+  vim.keymap.set("n", "<D-=>", function() scale(1.1) end)
+  vim.keymap.set("n", "<D-->", function() scale(1 / 1.1) end)
+  vim.keymap.set("n", "<D-0>", function() scale() end)
+end
